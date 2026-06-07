@@ -9,7 +9,8 @@
 # Logs:       docker compose logs -f open-webui
 # Stop:       docker compose down            (data persists in the named volume)
 #
-# Web search (SearXNG) and other services get added in later phases.
+# Phase 2 adds a searxng service for private web search. It has no published host
+# port — Open WebUI reaches it internally at http://searxng:8080.
 
 services:
   open-webui:
@@ -22,11 +23,23 @@ services:
       - OLLAMA_BASE_URL=http://host.docker.internal:11434
       # First account created becomes admin; set to "false" to require login.
       - WEBUI_AUTH=true
+      # Phase 2: private web search via the searxng service (internal network).
+      - ENABLE_WEB_SEARCH=true
+      - WEB_SEARCH_ENGINE=searxng
+      - SEARXNG_QUERY_URL=http://searxng:8080/search?q=<query>
     extra_hosts:
       # Required on Linux; harmless on macOS where host.docker.internal already resolves.
       - "host.docker.internal:host-gateway"
     volumes:
       - open-webui:/app/backend/data
+    restart: unless-stopped
+
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng
+    # No host port published — only open-webui reaches it, over the compose network.
+    volumes:
+      - ./searxng:/etc/searxng:rw
     restart: unless-stopped
 
 volumes:
