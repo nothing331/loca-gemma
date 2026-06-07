@@ -27,6 +27,12 @@ services:
       - ENABLE_WEB_SEARCH=true
       - WEB_SEARCH_ENGINE=searxng
       - SEARXNG_QUERY_URL=http://searxng:8080/search?q=<query>
+      # Open WebUI 0.9.6 regression: web-search results are stored in an ephemeral
+      # "web-search-*" vector collection, but chat-time retrieval drops it as an
+      # "untrusted direct collection_name" unless access control is bypassed — so
+      # every web search returns "No sources found" despite fetching pages fine.
+      # This is harmless on a single-admin local instance and is the supported fix.
+      - BYPASS_RETRIEVAL_ACCESS_CONTROL=true
     extra_hosts:
       # Required on Linux; harmless on macOS where host.docker.internal already resolves.
       - "host.docker.internal:host-gateway"
