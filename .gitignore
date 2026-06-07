@@ -1,0 +1,7 @@
+# Secrets — never commit
+.env
+
+# Live SearXNG config: the container rewrites secret_key into this file at
+# startup (from SEARXNG_SECRET), so it must not be tracked. Use the committed
+# searxng/settings.yml.example as the template.
+/searxng/settings.yml

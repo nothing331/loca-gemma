@@ -1,0 +1,21 @@
+# Minimal SearXNG config for loca-gemma Phase 2.
+# Overrides the image defaults: enables the JSON API (required by Open WebUI),
+# disables the Redis-backed rate limiter (single local user).
+#
+# SETUP: copy this file to settings.yml (it is gitignored):
+#   cp searxng/settings.yml.example searxng/settings.yml
+# Leave secret_key as "ultrasecretkey" — at container start the image replaces
+# it with SEARXNG_SECRET from your .env file.
+use_default_settings: true
+
+server:
+  # Placeholder; replaced at startup from the SEARXNG_SECRET env var (.env).
+  secret_key: "ultrasecretkey"
+  limiter: false
+  image_proxy: true
+
+search:
+  # 'json' is OFF by default in SearXNG and is REQUIRED for Open WebUI's API calls.
+  formats:
+    - html
+    - json

@@ -23,6 +23,8 @@ services:
       - OLLAMA_BASE_URL=http://host.docker.internal:11434
       # First account created becomes admin; set to "false" to require login.
       - WEBUI_AUTH=true
+      # Session/JWT signing key, from .env (keeps logins valid across restarts).
+      - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}
       # Phase 2: private web search via the searxng service (internal network).
       - ENABLE_WEB_SEARCH=true
       - WEB_SEARCH_ENGINE=searxng
@@ -54,6 +56,9 @@ services:
     image: searxng/searxng:latest
     container_name: searxng
     # No host port published — only open-webui reaches it, over the compose network.
+    environment:
+      # Replaces the "ultrasecretkey" placeholder in settings.yml at startup.
+      - SEARXNG_SECRET=${SEARXNG_SECRET}
     volumes:
       - ./searxng:/etc/searxng:rw
     restart: unless-stopped

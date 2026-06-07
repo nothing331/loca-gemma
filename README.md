@@ -28,18 +28,48 @@ Ollama runs natively on the Mac for best Metal/GPU performance; Open WebUI runs 
 
 1. **Make sure Ollama and Docker Desktop are running.**
 
-2. **Start the chat interface:**
+2. **Create your config files** (first time only — see [Configuration & secrets](#configuration--secrets)):
+   ```bash
+   cp .env.example .env                               # then fill in two secrets (below)
+   cp searxng/settings.yml.example searxng/settings.yml
+   ```
+   Generate a value for each secret in `.env` with:
+   ```bash
+   openssl rand -hex 32        # run twice; paste into SEARXNG_SECRET and WEBUI_SECRET_KEY
+   ```
+
+3. **Start everything:**
    ```bash
    docker compose up -d
    ```
 
-3. **Open** http://localhost:3000 and create your account (first account = admin).
+4. **Open** http://localhost:3000 and create your account (first account = admin).
 
-4. **Select the model:** in the model dropdown, choose **`gemma4-tuned`**.
+5. **Select the model:** in the model dropdown, choose **`gemma4-tuned`**.
 
-5. **Try it:**
+6. **Try it:**
    - Type a message.
    - Click the 📎 attachment icon to upload an image and ask about it.
+   - Toggle **Web Search** in the message bar to answer from the live web.
+
+## Configuration & secrets
+
+Secrets live in a **`.env`** file (gitignored — never committed). Docker Compose reads it
+automatically and substitutes the values into `docker-compose.yml`.
+
+| Variable | Used for |
+|----------|----------|
+| `SEARXNG_SECRET` | SearXNG server key. Injected into `searxng/settings.yml` (replacing the `ultrasecretkey` placeholder) at container start. |
+| `WEBUI_SECRET_KEY` | Open WebUI session/JWT signing key — keep it stable so logins survive restarts. |
+
+Setup:
+1. `cp .env.example .env` and put a random value (`openssl rand -hex 32`) in each variable.
+2. `cp searxng/settings.yml.example searxng/settings.yml` — leave `secret_key: "ultrasecretkey"`
+   as-is; the container rewrites it from `SEARXNG_SECRET` on startup. (This is why the live
+   `searxng/settings.yml` is gitignored — it ends up holding the real secret.)
+
+To rotate a secret: change it in `.env`, restore the `ultrasecretkey` placeholder in
+`searxng/settings.yml` (or re-copy the example), then `docker compose up -d`.
 
 ## Tuning
 
@@ -61,9 +91,13 @@ and search is opt-in per message.
 To use it: in a chat, toggle **Web Search** on in the message bar, then ask your question.
 Answers come back with cited sources.
 
-Config lives in [`searxng/settings.yml`](searxng/settings.yml) (JSON API enabled, rate
-limiter off). Open WebUI is pointed at it via `SEARXNG_QUERY_URL` in
-[`docker-compose.yml`](docker-compose.yml).
+Config template is [`searxng/settings.yml.example`](searxng/settings.yml.example) (JSON API
+enabled, rate limiter off); your live `searxng/settings.yml` is created from it and gitignored.
+Open WebUI is pointed at SearXNG via `SEARXNG_QUERY_URL` in
+[`docker-compose.yml`](docker-compose.yml). Pages are rendered with a headless **Playwright**
+browser (`WEB_LOADER_ENGINE=playwright`) so JavaScript-heavy and bot-protected sites return
+real content. See the [`scripts/inspect-websearch.sh`](scripts/inspect-websearch.sh) helper to
+inspect exactly what a search fetched.
 
 ## Common commands
 
