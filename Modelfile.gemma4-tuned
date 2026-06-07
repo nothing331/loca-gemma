@@ -1,0 +1,20 @@
+# gemma4-tuned — Gemma 4 e4b tuned for a 16 GB Apple M4
+#
+# Build:   ollama create gemma4-tuned -f Modelfile.gemma4-tuned
+# Run:     ollama run gemma4-tuned
+# Rebuild after edits: re-run the create command (it overwrites).
+#
+# Notes:
+# - Inherits template, license, and weights from gemma4:latest (the e4b variant).
+# - num_ctx 8192: Ollama defaults to 4096 on <24 GiB GPU memory (your Mac); 8192 is
+#   the comfortable sweet spot for 16 GB. Watch `ollama ps` stays GPU-resident if you
+#   raise it toward 16384. The model's 128K ceiling is NOT reachable in 16 GB.
+# - Sampling left at Google's official recommended defaults (temp 1 / top_p 0.95 / top_k 64).
+#   For deterministic work (spreadsheet code, structured output) drop temperature to ~0.3.
+
+FROM gemma4:latest
+
+PARAMETER num_ctx 8192
+PARAMETER temperature 1
+PARAMETER top_p 0.95
+PARAMETER top_k 64

@@ -1,0 +1,33 @@
+# loca-gemma — local private AI assistant
+#
+# Phase 1: Open WebUI (chat interface) connected to the Ollama already running
+# natively on this Mac. Ollama is NOT containerized — Open WebUI reaches the host
+# Ollama at host.docker.internal:11434.
+#
+# Bring up:   docker compose up -d
+# Open:       http://localhost:3000
+# Logs:       docker compose logs -f open-webui
+# Stop:       docker compose down            (data persists in the named volume)
+#
+# Web search (SearXNG) and other services get added in later phases.
+
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    ports:
+      - "3000:8080"
+    environment:
+      # Reach the host's native Ollama from inside the container.
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      # First account created becomes admin; set to "false" to require login.
+      - WEBUI_AUTH=true
+    extra_hosts:
+      # Required on Linux; harmless on macOS where host.docker.internal already resolves.
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - open-webui:/app/backend/data
+    restart: unless-stopped
+
+volumes:
+  open-webui:
