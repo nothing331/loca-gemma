@@ -51,6 +51,20 @@ The `gemma4-tuned` model is defined in [`Modelfile.gemma4-tuned`](Modelfile.gemm
 - Sampling uses Google's recommended defaults (temp 1 / top_p 0.95 / top_k 64).
   For deterministic tasks (spreadsheet code, structured output), lower temperature to ~0.3.
 
+## Web search (Phase 2)
+
+A self-hosted **SearXNG** container provides private web search. It runs on the compose
+network with no published host port — only Open WebUI talks to it, and your prompts/chat
+history never leave the Mac. Only the search query itself is forwarded to upstream engines,
+and search is opt-in per message.
+
+To use it: in a chat, toggle **Web Search** on in the message bar, then ask your question.
+Answers come back with cited sources.
+
+Config lives in [`searxng/settings.yml`](searxng/settings.yml) (JSON API enabled, rate
+limiter off). Open WebUI is pointed at it via `SEARXNG_QUERY_URL` in
+[`docker-compose.yml`](docker-compose.yml).
+
 ## Common commands
 
 ```bash
@@ -64,7 +78,7 @@ ollama list                     # list installed models
 ## Roadmap
 
 - [x] Phase 1 — Ollama + Open WebUI chat with tuned Gemma 4, image input
-- [ ] Phase 2 — Private web search (self-hosted SearXNG)
+- [x] Phase 2 — Private web search (self-hosted SearXNG)
 - [ ] Phase 3 — Sensitive spreadsheet analysis (code interpreter / local pandas)
 - [ ] Phase 4 — Document RAG (nomic-embed-text is already installed for embeddings)
 
@@ -75,3 +89,6 @@ ollama list                     # list installed models
   Settings → Connections is `http://host.docker.internal:11434` (not `localhost`).
 - **Model is slow / spills to CPU:** run `ollama ps`; if PROCESSOR isn't "100% GPU",
   lower `num_ctx` in the Modelfile and rebuild.
+- **Web search returns nothing / errors:** check `docker compose logs searxng`. A 403 or
+  HTML response to the JSON API means SearXNG's `formats` list is missing `json` — confirm
+  `searxng/settings.yml` lists `json` under `search.formats`, then `docker compose up -d`.
