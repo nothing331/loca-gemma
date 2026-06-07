@@ -33,6 +33,16 @@ services:
       # every web search returns "No sources found" despite fetching pages fine.
       # This is harmless on a single-admin local instance and is the supported fix.
       - BYPASS_RETRIEVAL_ACCESS_CONTROL=true
+      # Render pages with a real headless browser instead of a plain HTTP GET, so
+      # JavaScript-heavy sites (live scores, SPAs) and bot-protected pages return
+      # real content instead of nav boilerplate / "enable JavaScript" stubs. Also
+      # sends a genuine browser User-Agent, which unblocks sources like Wikipedia.
+      - WEB_LOADER_ENGINE=playwright
+      - PLAYWRIGHT_WS_URL=ws://playwright:3000/
+      - PLAYWRIGHT_TIMEOUT=15000
+      # Pass more retrieved chunks to the model (default 3) so the relevant snippet
+      # isn't pruned out by the top-K cut on content-heavy pages.
+      - RAG_TOP_K=6
     extra_hosts:
       # Required on Linux; harmless on macOS where host.docker.internal already resolves.
       - "host.docker.internal:host-gateway"
@@ -46,6 +56,15 @@ services:
     # No host port published — only open-webui reaches it, over the compose network.
     volumes:
       - ./searxng:/etc/searxng:rw
+    restart: unless-stopped
+
+  # Headless-browser page renderer for web search. The image version MUST match the
+  # `playwright` Python package inside open-webui (1.58.0) or chromium.connect() fails.
+  # Internal only — open-webui connects at ws://playwright:3000/.
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.58.0-noble
+    container_name: playwright
+    command: npx -y playwright@1.58.0 run-server --port 3000 --host 0.0.0.0
     restart: unless-stopped
 
 volumes:
